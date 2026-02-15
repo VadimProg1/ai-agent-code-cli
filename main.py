@@ -3,6 +3,8 @@ import argparse
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from prompts import system_prompt 
+from functions.available_functions import available_functions
 
 def get_llm_client():
     load_dotenv()
@@ -31,13 +33,22 @@ def main():
     user_input = setup_parser().parse_args()
     messages = [types.Content(role="user", parts=[types.Part(text=user_input.prompt)])]
     
-    response = client.models.generate_content(model=model_name, contents=messages)
+    response = client.models.generate_content(
+        model=model_name,
+        contents=messages,
+        config=types.GenerateContentConfig(tools=[available_functions], system_instruction=system_prompt)
+    )
     if response.usage_metadata == None:
         raise RuntimeError("Usage metadata from response not found!")
     
     if user_input.verbose:
         print_metadata(user_input, response)
-    print(f"Response:\n{response.text}")
+
+    if response.function_calls != None or len(response.function_calls) > 0:
+        for function_call in response.function_calls:
+            print(f"Calling function: {function_call.name}({function_call.args})")
+    else:
+        print(f"Response:\n{response.text}")
     
 
 if __name__ == "__main__":
