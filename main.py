@@ -5,6 +5,7 @@ from google import genai
 from google.genai import types
 from prompts import system_prompt 
 from functions.available_functions import available_functions
+from functions.call_function import call_function
 
 def get_llm_client():
     load_dotenv()
@@ -45,8 +46,17 @@ def main():
         print_metadata(user_input, response)
 
     if response.function_calls != None or len(response.function_calls) > 0:
+        function_results = []
         for function_call in response.function_calls:
-            print(f"Calling function: {function_call.name}({function_call.args})")
+            function_call_result = call_function(function_call, user_input.verbose)
+            if function_call_result.parts == None or len(function_call_result.parts) == 0:
+                raise Exception("Parts is empty")
+            result_parts = function_call_result.parts
+            if result_parts[0].function_response == None or result_parts[0].function_response.response == None:
+                raise Exception("Function response is empty")
+            function_results = result_parts[0]
+            if user_input.verbose:
+                print(f"-> {result_parts[0].function_response.response}")
     else:
         print(f"Response:\n{response.text}")
     
