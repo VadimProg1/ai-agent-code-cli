@@ -1,4 +1,24 @@
 import os
+from google.genai import types
+
+schema_write_file = types.FunctionDeclaration(
+    name="write_file",
+    description="Writes data into file in a specified file path relative to the working directory",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="File path of the file to write data into. Relative to the working directory",
+            ),
+            "content": types.Schema(
+                type=types.Type.STRING,
+                description="Data to write into a file"
+            )
+        },
+        required=["file_path"]
+    ),
+)
 
 def write_file(working_directory, file_path, content):
     if not isinstance(file_path, str) or len(file_path) == 0 or file_path.isspace():
